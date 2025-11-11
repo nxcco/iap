@@ -5,9 +5,10 @@ import pychop
 pychop.backend('numpy')
 
 # Specifications according to "Minifloats" (Wikipedia)
-fp16 = LightChop(exp_bits=5, sig_bits=10)
-fp8 = LightChop(exp_bits=5, sig_bits=2)
-fp4 = LightChop(exp_bits=2, sig_bits=1)
+fp32 = LightChop(exp_bits=8, sig_bits=23) # single
+fp16 = LightChop(exp_bits=5, sig_bits=10) # half
+fp8 = LightChop(exp_bits=5, sig_bits=2) # quarter
+fp4 = LightChop(exp_bits=2, sig_bits=1) # eigth
 
 def factorize(A, fl):
     n = A.shape[0]

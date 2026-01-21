@@ -1,0 +1,3 @@
+[submodule "HPC"]
+	path = HPC
+	url = git@github.com:EclectX/HPC.git

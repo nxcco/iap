@@ -1,0 +1,13 @@
+{
+  "extraPaths": ["./HPC"],
+  "executionEnvironments": [
+    {
+      "root": "approximate-multiplier",
+      "extraPaths": ["../HPC"]
+    },
+    {
+      "root": "iterative-refinement",
+      "extraPaths": ["../HPC"]
+    }
+  ]
+}

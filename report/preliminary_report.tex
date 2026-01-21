@@ -1,0 +1,463 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+
+\geometry{margin=2.5cm}
+
+\title{Mathematical Analysis of Approximate Multiplication Processes}
+\author{Nico Teufel}
+\date{Jan 11, 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+The present system implements an approximate floating-point multiplier (AFPM) for 32-bit IEEE 754 formats. The focus is on increasing efficiency through targeted error injection in the mantissa multiplication (24-bit), controlled by a genetic structure, the so-called \textit{chromosome}.
+
+\section{Approximation Process}
+
+\subsection{Mantissa Decomposition (AIM\_24)}
+The 24-bit mantissas are divided into three 8-bit segments: \textit{Low} (L), \textit{Medium} (M), and \textit{High} (H). The multiplication is performed by summing up 9 partial products ($mul_1$ to $mul_9$):
+\begin{equation}
+  Result = \sum_{i=1}^{9} mul_i \cdot 2^{k_i}
+\end{equation}
+Each partial product is controlled by a gene in the chromosome, which determines which 8x8-bit multiplier type (\textit{PRIM8}) is used.
+
+\subsection{Importance Order of Partial Products}
+The analysis shows a clear prioritization based on bit significance:
+\begin{itemize}
+  \item \textbf{Low Relevance ($2^0, 2^8$):} $mul_1$ (LL), $mul_2$ (ML), $mul_3$ (LM).
+  \item \textbf{Medium Relevance ($2^{16}$):} $mul_4$ (HL), $mul_5$ (MM), $mul_6$ (LH).
+  \item \textbf{High Relevance ($2^{24}, 2^{32}$):} $mul_7$ (HM), $mul_8$ (MH), $mul_9$ (HH).
+\end{itemize}
+
+\subsection{PRIM8\_xy and GroupX Approximation}
+A \textit{PRIM8\_xy} multiplier decomposes the second 8-bit operand into two 4-bit nibbles.
+\begin{itemize}
+  \item \textbf{Index x:} Determines the approximation of the \textit{lower} nibble (bits 0-3).
+  \item \textbf{Index y:} Determines the approximation of the \textit{upper} nibble (bits 4-7).
+\end{itemize}
+The \textit{GroupX(z)} cores inject errors by ignoring carries in the lowest \textit{z} bit positions of the column addition or replacing them with OR operations. A higher index implies a more aggressive approximation.
+
+\section{Analysis of the 51 Chromosome Configurations}
+
+In the file \texttt{config\_primr8.yaml}, a total of 50 active configurations were identified, which, together with the exact reference, form the 51 examined scenarios.
+
+\subsection{Configuration Scheme}
+All 50 approximate chromosomes follow a strict safety pattern to ensure numerical stability:
+\begin{equation}
+  Chromosom = [100, 100, 100, G, G, G, 0, 0, 0]
+\end{equation}
+\begin{itemize}
+  \item \textbf{Genes 0-2 (Low):} Value \texttt{100} (\texttt{zero\_mul}). These partial products are completely ignored.
+  \item \textbf{Genes 3-5 (Medium):} Value \texttt{G}. Here the specific approximation type $P_{xy}$ is applied.
+  \item \textbf{Genes 6-8 (High):} Value \texttt{0} (\texttt{PRIM8\_11}). These critical products are calculated exactly.
+\end{itemize}
+
+\subsection{The Pxy Families}
+The 49 examined $P_{xy}$ configurations (plus the exact one) are divided as follows:
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Family} & \textbf{Range y} & \textbf{Description}                 \\
+    \midrule
+    P41 -- P44      & $y \in [1, 4]$   & Moderate Approximation (x=4)         \\
+    P51 -- P55      & $y \in [1, 5]$   & ...                                  \\
+    P61 -- P66      & $y \in [1, 6]$   & ...                                  \\
+    P71 -- P77      & $y \in [1, 7]$   & ...                                  \\
+    P81 -- P88      & $y \in [1, 8]$   & ...                                  \\
+    P91 -- P99      & $y \in [1, 9]$   & Strong Approximation                 \\
+    Pa1 -- Paa      & $y \in [1, 10]$  & Maximum Approximation (Hex 'a' = 10) \\
+    \bottomrule
+  \end{tabular}
+  \caption{Overview of the 49 approximate configurations.}
+\end{table}
+
+\section{Visual Analysis of Errors}
+For better illustration of the error behavior, the histograms for selected configurations are analyzed.
+
+The histograms were generated using a statistical simulation with $N = 2 \cdot 10^6$ samples. For each configuration, pairs of floating-point numbers $(A, B)$ were drawn from a uniform distribution in the range $[-1000, 1000]$. The relative error $e_{rel}$ was calculated as:
+\begin{equation}
+  e_{rel} = \frac{A_{approx} - A_{exact}}{A_{exact}}
+\end{equation}
+where $A_{exact} = A \cdot B$ is the exact product and $A_{approx} = \text{AFPM}(A, B)$ is the result of the approximate multiplication. The plots show the density distribution of $e_{rel}$ in percent. Additionally, the Mean Bias ($\mu = \frac{1}{N}\sum e_{rel}$) and the Standard Deviation ($\sigma$) are indicated.
+
+The results are grouped into families according to the index $x$ (e.g., Family P4, P5, etc.). This grouping is appropriate as the $x$ parameter in the $P_{xy}$ approximation represents the most important factor for the error characteristics, while the $y$ parameter allows for secondary fine-tuning within each family.
+
+Below are the histograms of the relative error distributions for all examined configuration families (P4x to Pax).
+
+\subsection{Placeholder for Visualizations}
+% \subsubsection{Family P4}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P41.png}
+%     \caption*{P41}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P42.png}
+%     \caption*{P42}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P43.png}
+%     \caption*{P43}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P44.png}
+%     \caption*{P44}
+%   \end{minipage}
+%   \hfill
+%   \caption{Histograms of family P4}
+% \end{figure}
+% \clearpage
+
+% \subsubsection{Family P5}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P51.png}
+%     \caption*{P51}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P52.png}
+%     \caption*{P52}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P53.png}
+%     \caption*{P53}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P54.png}
+%     \caption*{P54}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P55.png}
+%     \caption*{P55}
+%   \end{minipage}
+%   \hfill
+%   \caption{Histograms of family P5}
+% \end{figure}
+% \clearpage
+
+% \subsubsection{Family P6}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P61.png}
+%     \caption*{P61}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P62.png}
+%     \caption*{P62}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P63.png}
+%     \caption*{P63}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P64.png}
+%     \caption*{P64}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P65.png}
+%     \caption*{P65}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P66.png}
+%     \caption*{P66}
+%   \end{minipage}
+%   \hfill
+%   \caption{Histograms of family P6}
+% \end{figure}
+% \clearpage
+
+% \subsubsection{Family P7}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P71.png}
+%     \caption*{P71}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P72.png}
+%     \caption*{P72}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P73.png}
+%     \caption*{P73}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P74.png}
+%     \caption*{P74}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P75.png}
+%     \caption*{P75}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P76.png}
+%     \caption*{P76}
+%   \end{minipage}
+%   \hfill
+% \end{figure}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P77.png}
+%     \caption*{P77}
+%   \end{minipage}
+%   \hfill
+%   \caption{Histograms of family P7}
+% \end{figure}
+% \clearpage
+
+% \subsubsection{Family P8}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P81.png}
+%     \caption*{P81}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P82.png}
+%     \caption*{P82}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P83.png}
+%     \caption*{P83}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P84.png}
+%     \caption*{P84}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P85.png}
+%     \caption*{P85}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P86.png}
+%     \caption*{P86}
+%   \end{minipage}
+%   \hfill
+% \end{figure}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P87.png}
+%     \caption*{P87}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P88.png}
+%     \caption*{P88}
+%   \end{minipage}
+%   \hfill
+%   \caption{Histograms of family P8}
+% \end{figure}
+% \clearpage
+
+% \subsubsection{Family P9}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P91.png}
+%     \caption*{P91}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P92.png}
+%     \caption*{P92}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P93.png}
+%     \caption*{P93}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P94.png}
+%     \caption*{P94}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P95.png}
+%     \caption*{P95}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P96.png}
+%     \caption*{P96}
+%   \end{minipage}
+%   \hfill
+% \end{figure}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P97.png}
+%     \caption*{P97}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P98.png}
+%     \caption*{P98}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_P99.png}
+%     \caption*{P99}
+%   \end{minipage}
+%   \hfill
+%   \caption{Histograms of family P9}
+% \end{figure}
+% \clearpage
+
+% \subsubsection{Family Pa}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Pa1.png}
+%     \caption*{Pa1}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Pa2.png}
+%     \caption*{Pa2}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Pa3.png}
+%     \caption*{Pa3}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Pa4.png}
+%     \caption*{Pa4}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Pa5.png}
+%     \caption*{Pa5}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Pa6.png}
+%     \caption*{Pa6}
+%   \end{minipage}
+%   \hfill
+% \end{figure}
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Pa7.png}
+%     \caption*{Pa7}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Pa8.png}
+%     \caption*{Pa8}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Pa9.png}
+%     \caption*{Pa9}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}{0.48\textwidth}
+%     \centering
+%     \includegraphics[width=\linewidth]{experiments/hist_Paa.png}
+%     \caption*{Paa}
+%   \end{minipage}
+%   \hfill
+%   \caption{Histograms of family Pa}
+% \end{figure}
+% \clearpage
+
+\section{Further Research}
+This analysis enables further research. A few areas are presented below:
+\begin{itemize}
+  \item What do the histograms for matrix multiplications look like?
+  \item How can a bias correction be applied without drawbacks on the efficiency of the approximation process?
+  \item Does the iterative refinement process for the 1D Poisson Problem converge (with or without bias correction)?
+  \item Can we model the approximate multipliers mathematically and derive properties and bounds from this model?
+\end{itemize}
+
+\end{document}

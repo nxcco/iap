@@ -2,7 +2,13 @@ import numpy as np
 from casting import to_prec
 from precisions import Precisions
 
-# Factorize the matrix
+# Cholesky factorization and triangular solve with configurable precision.
+# Every arithmetic operation is explicitly cast to the precision levels defined
+# in Precisions, so we can study how low-precision factorization affects accuracy.
+
+# Compute the lower-triangular Cholesky factor L of A (so A = L L^T) with all
+# multiplications and additions done in u_f precision. Used once per problem to
+# get the approximate factorization that the iterative refinement then corrects.
 def factorize(A):
     n = A.shape[0]
     L = np.zeros_like(A)
@@ -32,7 +38,10 @@ def factorize(A):
 
     return L
 
-# solve the matrix using cholesky matrix
+# Given the lower-triangular factor L (from factorize), solve Ax = b via forward
+# substitution (Ly = b) followed by backward substitution (L^T x = y). All ops
+# are done in u_s precision. Used both for the initial solve and for solving each
+# correction equation inside the refinement loop.
 def solve(L, b):
     n = L.shape[0]
     R = np.transpose(L)

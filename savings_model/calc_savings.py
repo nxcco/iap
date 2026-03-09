@@ -1,4 +1,11 @@
+# Models the hardware area savings achieved by different AFPM approximation levels.
+# A chromosome encodes which columns of the partial-product array are approximated
+# (saving adders). These functions translate chromosome gene indices into concrete
+# savings numbers so experiments can be ranked by hardware cost vs. accuracy.
 
+# Look up the cumulative adder savings for a single 8×4 GroupX approximation level
+# (1 = exact, 10 = most approximate). Based on the column-height model for an 8×4
+# partial-product array where higher columns have more adders that can be removed.
 def get_savings_per_level(level):
     """
     Returns the savings for a given GroupX level (1 to 10).
@@ -28,12 +35,11 @@ def get_savings_per_level(level):
     }
     return savings_map.get(level, 0)
 
+# Decode a single gene index (0–100) into total adder savings for a full 8×8
+# multiplication. Indices 0–99 encode two independent 8×4 approximation levels
+# (tens digit = upper half, ones digit = lower half). Index 100 means the
+# multiplier is zeroed out entirely, giving maximum savings.
 def decode_gene_savings(gene_index):
-    """
-    Calculates the savings for a single gene index (0-100).
-    Index 0-99: Encodes two 8x4 levels.
-    Index 100: Zero Multiplier (Max Savings).
-    """
     MAX_SAVINGS_8x4 = 21
     MAX_SAVINGS_8x8 = MAX_SAVINGS_8x4 * 2
 
@@ -57,10 +63,10 @@ def decode_gene_savings(gene_index):
     
     return savings_lower + savings_upper
 
+# Sum up the savings across all 9 genes of a chromosome to get the total hardware
+# cost reduction for the full AFPM configuration. Used to compare configurations:
+# a higher number means more area saved at the cost of more approximation error.
 def calculate_chromosome_savings(chromosome):
-    """
-    Calculates the total savings for a full chromosome (list of 9 gene indices).
-    """
     total_savings = 0
     for gene_index in chromosome:
         total_savings += decode_gene_savings(gene_index)

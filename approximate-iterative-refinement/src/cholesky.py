@@ -1,8 +1,14 @@
 import numpy as np
 from afpm_utils import afpm_mul
 
-# Factorize the matrix using Cholesky decomposition with AFPM multiplications
-# All additions, subtractions, divisions are done in float32.
+# Cholesky factorization and triangular solve where every multiplication is
+# done by the AFPM hardware model instead of exact IEEE arithmetic. All other
+# operations (add, subtract, divide, sqrt) stay in float32. This lets us measure
+# how approximate multiplications affect the accuracy of the factorization.
+
+# Compute the lower-triangular Cholesky factor L of A using AFPM for every
+# product. Returns a float32 matrix. Used once before the refinement loop to
+# get the approximate factorization that iterative refinement will then correct.
 def factorize(A):
     n = A.shape[0]
     L = np.zeros_like(A, dtype=np.float32)
@@ -31,7 +37,9 @@ def factorize(A):
 
     return L
 
-# solve the matrix using cholesky matrix
+# Given the lower-triangular factor L (from factorize), solve Ax = b via forward
+# substitution (Ly = b) followed by backward substitution (L^T x = y), with AFPM
+# used for every multiplication. Returns a float32 solution vector.
 def solve(L, b):
     n = L.shape[0]
     R = np.transpose(L) # L is already float32

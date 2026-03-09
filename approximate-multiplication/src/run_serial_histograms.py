@@ -4,6 +4,11 @@ import subprocess
 import sys
 import _import_config
 
+# Batch runner that sequentially processes all FPM_T6* AFPM configurations found
+# in config_primr8.yaml. For each configuration it spawns a separate bias_plotter.py
+# subprocess with 2 000 000 samples. Running sequentially (rather than in parallel)
+# keeps memory usage predictable on the HPC cluster.
+
 # Config laden
 config_path = os.path.join(os.path.dirname(__file__), '../config_primr8.yaml')
 with open(config_path, 'r') as f:

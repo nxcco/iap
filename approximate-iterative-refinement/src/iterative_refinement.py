@@ -2,7 +2,14 @@ import numpy as np
 import cholesky
 from afpm_utils import afpm_matvec
 
-# Computes the new x to find using one step of iterative refinement (in float32).
+# Iterative refinement loop where both the residual computation and the correction
+# solve use AFPM approximate multiplications, all in float32. This is the main
+# experiment: can approximate hardware still drive the error down to the float32
+# theoretical limit?
+
+# Perform one refinement step: compute r = b - A*x using AFPM matrix-vector
+# product, solve L L^T d = r with the pre-computed AFPM factorization, and return
+# x + d. Everything stays in float32.
 def refine(A, b, x, L):
     # Ensure inputs are float32
     A = A.astype(np.float32)
@@ -23,12 +30,10 @@ def refine(A, b, x, L):
 
     return x_new
 
-# Call the refine function multiple times
+# Run up to max_iter AFPM refinement steps starting from an initial estimate x,
+# using the pre-computed factorization L. Prints the residual (and optionally the
+# forward error if x_exact is given) at each step. Returns the final solution.
 def approximate(A, b, x, L, max_iter, x_exact=None):
-    """
-    Perform multiple iterations of iterative refinement using AFPM.
-    All vector ops are float32.
-    """
     # Ensure inputs are float32
     A = A.astype(np.float32)
     b = b.astype(np.float32)
@@ -54,7 +59,9 @@ def approximate(A, b, x, L, max_iter, x_exact=None):
 
     return x
 
-# Solve linear system Ax = b using iterative refinement with AFPM.
+# Full AFPM solver: factorize A once with AFPM Cholesky, get an initial solution,
+# then call approximate() to refine it. The one-stop entry point when you just
+# want a refined solution without managing the factorization yourself.
 def solve(A, b, max_iter, x_exact=None):
     # Convert inputs to float32
     A = A.astype(np.float32)

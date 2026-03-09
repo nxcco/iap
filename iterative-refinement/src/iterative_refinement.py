@@ -1,11 +1,16 @@
-# This file implements the refinement, but not the cholesky part.
+# Implements the iterative refinement loop on top of the Cholesky solver.
+# Each step computes the residual in high precision (u_r), solves for a correction
+# in low precision (u_s), and updates the solution in working precision (u). Over
+# several iterations this drives the forward error toward the theoretical limit.
 
 import numpy as np
 import cholesky
 from precisions import Precisions
 from casting import to_prec
 
-# Computes the new x to find.
+# Perform one step of iterative refinement: compute r = b - Ax in precision u_r,
+# solve L L^T d = r in precision u_s, and return the updated x = x + d in
+# precision u. The caller is responsible for factorizing A beforehand and passing L.
 def refine(A, b, x, L):
     # Compute residual in higher precision (u_r)
     # Cast A, b, x to u_r precision BEFORE computing the residual
@@ -27,23 +32,11 @@ def refine(A, b, x, L):
 
     return x_new
 
-# Call the refine function multiple times but does not compute the factorization.
+# Run up to max_iter refinement steps starting from an initial estimate x, using
+# the pre-computed factorization L. Prints the residual (and optionally the
+# forward error if x_exact is given) at each step so you can watch convergence.
+# Returns the final refined solution.
 def approximate(A, b, x, L, max_iter, x_exact=None):
-    """
-    Perform multiple iterations of iterative refinement using pre-computed factorization.
-
-    Args:
-        A: Coefficient matrix
-        b: Right-hand side vector
-        x: Initial solution estimate
-        L: Pre-computed Cholesky factorization of A
-        max_iter: Maximum number of refinement iterations
-        x_exact: Optional exact solution for error computation
-        verbose: If True, print progress information
-
-    Returns:
-        Refined solution
-    """
     for i in range(max_iter):
         x = refine(A, b, x, L)
 
@@ -61,7 +54,9 @@ def approximate(A, b, x, L, max_iter, x_exact=None):
 
     return x
 
-# Solve linear system Ax = b using iterative refinement.
+# Full solver: factorize A once in u_f, get an initial solution in u_s, then
+# call approximate() to iteratively refine it. The one-stop entry point when you
+# just want a refined solution without managing the factorization yourself.
 def solve(A, b, max_iter, x_exact=None):
     # Initial solve: factorize ONCE in u_f, solve in u_s
     L = cholesky.factorize(A)

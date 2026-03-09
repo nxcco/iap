@@ -8,8 +8,14 @@ from casting import to_prec
 from src.theoretical import calc_theoretical_limit, get_sparsity_p, get_machine_epsilon, check_convergence
 from precisions import Precisions
 
+# Entry point for the iterative-refinement experiment. Sets up a 1D Poisson problem,
+# runs the multi-precision refinement loop, and produces two plots: the relative
+# forward error and the relative residual per iteration, both compared to the
+# theoretical bound from Corollary 3.3.
 
-# generates and saves the plot for a iterative refinement process.
+# Solve an N×N 1D Poisson system with iterative refinement and save convergence
+# plots to output_dir. Prints per-iteration forward error and residual to stdout,
+# and draws a horizontal line at the theoretical error limit for comparison.
 def iterative_refinement_of_fixed_matrix(N, max_iter, output_dir):
     f_val = 1.0
     u0 = 0.0

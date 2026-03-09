@@ -7,7 +7,14 @@ import cholesky
 from afpm_utils import set_active_chromosome, afpm_matvec, CURRENT_CHROMOSOME
 from theoretical import calc_theoretical_limit, get_sparsity_p
 
-# Generates and saves the plot for an iterative refinement process using AFPM + float32.
+# Entry point for the AFPM iterative-refinement experiment. Sets up a 1D Poisson
+# problem, runs the approximate refinement loop with the active AFPM chromosome,
+# and produces two convergence plots: relative forward error and relative residual
+# per iteration, both overlaid with the float32 theoretical bound.
+
+# Solve an N×N Poisson system using AFPM-based Cholesky + iterative refinement,
+# printing per-iteration metrics and saving side-by-side convergence plots to
+# output_dir. The active AFPM chromosome must be set before calling this function.
 def iterative_refinement_of_fixed_matrix(N, max_iter, output_dir):
     f_val = 1.0
     u0 = 0.0

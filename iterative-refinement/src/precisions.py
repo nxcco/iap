@@ -1,4 +1,6 @@
-# A simple configuration class that enables to swap out the different precisions.
+# Central place to configure the four precision levels used by the iterative
+# refinement algorithm. Swap these strings to try different precision combinations
+# without touching any of the algorithm code.
 
 class Precisions:
     # Factorization Precision: Precision used for matrix factorization (e.g., Cholesky).

@@ -1,5 +1,12 @@
 import numpy as np
 
+# Theoretical error bounds for the AFPM iterative refinement experiment.
+# Mirrors the formulas in iterative-refinement/theoretical.py but assumes a
+# single fixed precision (float32) for both the working and residual computation,
+# since the AFPM hardware operates entirely in float32.
+
+# Return the unit roundoff for float16/32/64. Defaults to float32 since that is
+# the only precision the AFPM hardware uses in this subproject.
 def get_machine_epsilon(precision_str="float32"):
     """
     Returns the unit roundoff (machine epsilon) for the given precision type.
@@ -15,11 +22,10 @@ def get_machine_epsilon(precision_str="float32"):
         return 2**-24
 
 
+# Compute the componentwise condition number cond(A,x) = || |A^-1| |A| |x| ||_inf
+# / ||x||_inf. Captures how sensitive the solution is to perturbations component-
+# by-component. Used in the theoretical bound and convergence check.
 def cond_Ax(A, x):
-    """
-    Compute the componentwise condition number cond(A, x).
-    Formula: || |A^-1| * |A| * |x| ||_inf / ||x||_inf
-    """
     A_inv = np.linalg.inv(A)
     abs_Ax = np.abs(A) @ np.abs(x)
     numerator = np.linalg.norm(np.abs(A_inv) @ abs_Ax, np.inf)
@@ -27,11 +33,10 @@ def cond_Ax(A, x):
     return numerator / denominator
 
 
+# Apply the formula limit = 4 * p * u_r * cond(A,x) + u to get the floor the
+# forward error should converge to. Because everything is float32 here, u = u_r.
+# The result is the horizontal bound line drawn on the convergence plot.
 def calc_theoretical_limit(A, exact_x, p, precision="float32"):
-    """
-    Calculate the theoretical upper bound for forward error.
-    Assuming fixed precision iterative refinement (u = u_r).
-    """
     u = get_machine_epsilon(precision)
     u_r = u 
 
@@ -43,10 +48,10 @@ def calc_theoretical_limit(A, exact_x, p, precision="float32"):
     return limit, u, u_r, c_cond
 
 
+# Count the maximum number of nonzeros in any row of A. For the 1D Poisson
+# tridiagonal this is 3. Passed as p into the theoretical bound — a denser
+# matrix would give a larger (looser) bound.
 def get_sparsity_p(A):
-    """
-    Determine the maximum number of non-zero elements per row in matrix A.
-    """
     non_zeros_per_row = np.count_nonzero(A, axis=1)
     p = np.max(non_zeros_per_row)
     return p

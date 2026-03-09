@@ -6,6 +6,6 @@ import sys
 import os
 
 # Add HPC directory to path
-_hpc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'HPC'))
+_hpc_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'HPC'))
 if _hpc_path not in sys.path:
     sys.path.insert(0, _hpc_path)

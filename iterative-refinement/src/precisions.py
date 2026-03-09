@@ -8,7 +8,7 @@ class Precisions:
     u_s = "float32" 
     
     # Working Precision: Base precision for input data (A, b) and solution (x).
-    u = "float64"
+    u = "float32"
 
     # Residual Precision: Precision used for calculating the residual r = b - Ax.
     u_r = "float64"

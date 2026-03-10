@@ -8,9 +8,7 @@ import cholesky
 from precisions import Precisions
 from casting import to_prec
 
-# Perform one step of iterative refinement: compute r = b - Ax in precision u_r,
-# solve L L^T d = r in precision u_s, and return the updated x = x + d in
-# precision u. The caller is responsible for factorizing A beforehand and passing L.
+# perform one step of iterative refinement
 def refine(A, b, x, L):
     # Compute residual in higher precision (u_r)
     # Cast A, b, x to u_r precision BEFORE computing the residual
@@ -32,10 +30,7 @@ def refine(A, b, x, L):
 
     return x_new
 
-# Run up to max_iter refinement steps starting from an initial estimate x, using
-# the pre-computed factorization L. Prints the residual (and optionally the
-# forward error if x_exact is given) at each step so you can watch convergence.
-# Returns the final refined solution.
+# run iterative refinement steps
 def approximate(A, b, x, L, max_iter, x_exact=None):
     for i in range(max_iter):
         x = refine(A, b, x, L)
@@ -54,9 +49,7 @@ def approximate(A, b, x, L, max_iter, x_exact=None):
 
     return x
 
-# Full solver: factorize A once in u_f, get an initial solution in u_s, then
-# call approximate() to iteratively refine it. The one-stop entry point when you
-# just want a refined solution without managing the factorization yourself.
+# full solver using iterative refinement
 def solve(A, b, max_iter, x_exact=None):
     # Initial solve: factorize ONCE in u_f, solve in u_s
     L = cholesky.factorize(A)

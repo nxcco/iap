@@ -71,8 +71,7 @@ CHROMOSOMES = {
     'Paa': [100, 100, 100, 99, 99, 99, 0, 0, 0],
 }
 
-# Convert a Python float to a list of 32 bits (MSB first) matching the IEEE 754
-# single-precision bit pattern. Needed to feed values into the AFPM bit-level model.
+# convert a float to a 32-bit binary list
 def float_to_32bit_binary(f):
     packed = struct.pack('>f', f)
     bits = struct.unpack('>I', packed)[0]
@@ -81,8 +80,7 @@ def float_to_32bit_binary(f):
         binary[31-i] = (bits >> i) & 1
     return binary
 
-# Reconstruct a Python float from a 32-bit list (MSB first). Inverse of
-# float_to_32bit_binary — used to turn the AFPM output bits back into a number.
+# convert a 32-bit binary list to a float
 def binary_to_float(binary):
     bits = 0
     for i in range(32):
@@ -91,9 +89,7 @@ def binary_to_float(binary):
     packed = struct.pack('>I', bits)
     return struct.unpack('>f', packed)[0]
 
-# Multiply a and b using the AFPM hardware model with the given chromosome config.
-# If the chromosome is all zeros (EXACT), falls back to standard float32 multiply.
-# This is the core hardware-simulation step: converts to bits, calls AFPM, converts back.
+# multiply two numbers using the AFPM hardware model
 def afpm_multiply(a, b, chromosome):
     # If using 'EXACT' chromosome or all zeros, use standard multiplication (in float32)
     if all(c == 0 for c in chromosome):
@@ -109,9 +105,7 @@ def afpm_multiply(a, b, chromosome):
 # Global configuration variable (can be set by main.py)
 CURRENT_CHROMOSOME = CHROMOSOMES['Paa']
 
-# Select a chromosome config by name (e.g. 'Paa') to use for all subsequent
-# AFPM multiplications. Call this once at the start of an experiment to choose
-# how approximate the hardware should be.
+# set the active AFPM chromosome configuration by name
 def set_active_chromosome(name):
     global CURRENT_CHROMOSOME
     if name in CHROMOSOMES:
@@ -124,15 +118,11 @@ def set_active_chromosome(name):
         raise ValueError(f"Chromosome config '{name}' not found.")
     print(f"AFPM: Active chromosome set to {name}")
 
-# Convenience wrapper: multiply a and b with the currently active chromosome.
-# This is what all the solver code calls so it doesn't need to pass the chromosome
-# around explicitly.
+# multiply two numbers using the active AFPM chromosome
 def afpm_mul(a, b):
     return afpm_multiply(a, b, CURRENT_CHROMOSOME)
 
-# Compute the matrix-vector product Ax using afpm_mul for every scalar multiplication.
-# The result is a float32 vector. Used in the refinement loop to compute the
-# residual r = b - Ax with approximate hardware arithmetic.
+# compute the matrix-vector product Ax using AFPM
 def afpm_matvec(A, x):
     n = A.shape[0]
     # Handle 1D vector x properly

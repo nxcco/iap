@@ -12,9 +12,7 @@ from theoretical import calc_theoretical_limit, get_sparsity_p
 # and produces two convergence plots: relative forward error and relative residual
 # per iteration, both overlaid with the float32 theoretical bound.
 
-# Solve an N×N Poisson system using AFPM-based Cholesky + iterative refinement,
-# printing per-iteration metrics and saving side-by-side convergence plots to
-# output_dir. The active AFPM chromosome must be set before calling this function.
+# solve a Poisson system using AFPM Cholesky and iterative refinement
 def iterative_refinement_of_fixed_matrix(N, max_iter, output_dir):
     f_val = 1.0
     u0 = 0.0

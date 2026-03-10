@@ -18,7 +18,7 @@ CHROMOSOMES = {
     "EXACT": [0, 0, 0, 0, 0, 0, 0, 0, 0]
 }
 
-# --- Hilfsfunktionen ---
+# convert float to 32-bit binary
 def float_to_32bit_binary(f):
     packed = struct.pack('>f', f)
     bits = struct.unpack('>I', packed)[0]

@@ -11,9 +11,7 @@ PREC_MAP = {
     'float64': np.float64,
 }
 
-# Cast data to the given precision string (e.g. 'float16'). Works for both numpy
-# arrays and plain scalars. Used everywhere we need to simulate a hardware precision
-# boundary, so rounding errors accumulate just like on real low-precision hardware.
+# cast data to the given precision
 def to_prec(data, precision_str):
     target_type = PREC_MAP.get(precision_str)
 

@@ -7,9 +7,7 @@ from afpm_utils import afpm_matvec
 # experiment: can approximate hardware still drive the error down to the float32
 # theoretical limit?
 
-# Perform one refinement step: compute r = b - A*x using AFPM matrix-vector
-# product, solve L L^T d = r with the pre-computed AFPM factorization, and return
-# x + d. Everything stays in float32.
+# perform one step of iterative refinement using AFPM
 def refine(A, b, x, L):
     # Ensure inputs are float32
     A = A.astype(np.float32)
@@ -30,9 +28,7 @@ def refine(A, b, x, L):
 
     return x_new
 
-# Run up to max_iter AFPM refinement steps starting from an initial estimate x,
-# using the pre-computed factorization L. Prints the residual (and optionally the
-# forward error if x_exact is given) at each step. Returns the final solution.
+# run iterative refinement for a fixed number of steps using AFPM
 def approximate(A, b, x, L, max_iter, x_exact=None):
     # Ensure inputs are float32
     A = A.astype(np.float32)
@@ -59,9 +55,7 @@ def approximate(A, b, x, L, max_iter, x_exact=None):
 
     return x
 
-# Full AFPM solver: factorize A once with AFPM Cholesky, get an initial solution,
-# then call approximate() to refine it. The one-stop entry point when you just
-# want a refined solution without managing the factorization yourself.
+# solve Ax = b using AFPM Cholesky and iterative refinement
 def solve(A, b, max_iter, x_exact=None):
     # Convert inputs to float32
     A = A.astype(np.float32)
